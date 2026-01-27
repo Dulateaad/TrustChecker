@@ -27,11 +27,11 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
 const navItems = [
-  { href: '/text', icon: FileText, label: 'Text' },
-  { href: '/link', icon: LinkIcon, label: 'Link' },
-  { href: '/image', icon: FileImage, label: 'Image' },
-  { href: '/document', icon: FileJson, label: 'Document' },
-  { href: '/audio', icon: Mic, label: 'Audio' },
+  { href: '/text', icon: FileText, label: 'Текст' },
+  { href: '/link', icon: LinkIcon, label: 'Ссылка' },
+  { href: '/image', icon: FileImage, label: 'Изображение' },
+  { href: '/document', icon: FileJson, label: 'Документ' },
+  { href: '/audio', icon: Mic, label: 'Аудио' },
 ];
 
 const BottomNavBar = () => {
@@ -86,10 +86,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
              <SidebarMenuItem>
                 <SidebarMenuButton
                   disabled
-                  tooltip="Coming Soon"
+                  tooltip="Скоро"
                 >
                   <Clapperboard />
-                  <span>Live Mode</span>
+                  <span>Live режим</span>
                 </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
@@ -102,7 +102,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
             <Button variant="outline" asChild>
                 <a href="https://github.com/firebase/studio-extra-samples" target="_blank" rel="noopener noreferrer">
-                    View on GitHub
+                    Посмотреть на GitHub
                 </a>
             </Button>
         </header>

@@ -29,6 +29,13 @@ const riskLevelConfig: Record<
   critical: { color: 'bg-red-100 text-red-800', darkColor: 'dark:bg-red-900 dark:text-red-300', icon: AlertTriangle },
 };
 
+const riskLevelMap: Record<RiskLevel, string> = {
+    low: 'Низкий',
+    medium: 'Средний',
+    high: 'Высокий',
+    critical: 'Критический',
+};
+
 const RedFlagSeverityIcon = ({ severity }: { severity: RiskLevel }) => {
   const Icon = riskLevelConfig[severity]?.icon || Info;
   const colorClass = {
@@ -48,8 +55,8 @@ export function AnalysisResult({ data, isLoading, isPolling, onPoll }: AnalysisR
   const copyToClipboard = (text: string, type: string) => {
     navigator.clipboard.writeText(text);
     toast({
-      title: 'Copied to Clipboard',
-      description: `${type} has been copied.`,
+      title: 'Скопировано в буфер обмена',
+      description: `${type} был скопирован.`,
     });
   };
 
@@ -66,8 +73,8 @@ export function AnalysisResult({ data, isLoading, isPolling, onPoll }: AnalysisR
     } catch (error) {
       toast({
         variant: 'destructive',
-        title: 'Error Generating Reply',
-        description: 'Could not generate a new safe reply.',
+        title: 'Ошибка генерации ответа',
+        description: 'Не удалось сгенерировать новый безопасный ответ.',
       });
     } finally {
       setIsGeneratingReply(false);
@@ -90,19 +97,19 @@ export function AnalysisResult({ data, isLoading, isPolling, onPoll }: AnalysisR
             <CardHeader>
                 <CardTitle className="flex items-center justify-center gap-2">
                     <RefreshCw className="h-6 w-6 animate-spin" />
-                    Analysis in Progress
+                    Анализ в процессе
                 </CardTitle>
                 <CardDescription>
-                    The file is being processed. This may take a moment.
+                    Файл обрабатывается. Это может занять некоторое время.
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <p className="text-sm text-muted-foreground">You can wait or click the button below to check the status.</p>
+                <p className="text-sm text-muted-foreground">Вы можете подождать или нажать кнопку ниже, чтобы проверить статус.</p>
             </CardContent>
             <CardFooter className="justify-center">
                 <Button onClick={onPoll}>
                     <RefreshCw className="mr-2 h-4 w-4" />
-                    Check Status
+                    Проверить статус
                 </Button>
             </CardFooter>
         </Card>
@@ -123,12 +130,12 @@ export function AnalysisResult({ data, isLoading, isPolling, onPoll }: AnalysisR
         <Card>
             <CardHeader className="flex flex-row items-start justify-between space-y-0">
                 <div>
-                    <CardTitle className="font-headline text-2xl">Risk Assessment</CardTitle>
-                    <CardDescription>Overall risk detected from the provided input.</CardDescription>
+                    <CardTitle className="font-headline text-2xl">Оценка риска</CardTitle>
+                    <CardDescription>Общий риск, обнаруженный во входных данных.</CardDescription>
                 </div>
-                 <Button variant="ghost" size="sm" onClick={() => copyToClipboard(JSON.stringify(data, null, 2), 'JSON response')}>
+                 <Button variant="ghost" size="sm" onClick={() => copyToClipboard(JSON.stringify(data, null, 2), 'JSON ответ')}>
                     <Copy className="h-4 w-4 mr-2" />
-                    Copy JSON
+                    Копировать JSON
                 </Button>
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
@@ -136,13 +143,13 @@ export function AnalysisResult({ data, isLoading, isPolling, onPoll }: AnalysisR
                     <div className="font-bold text-7xl font-headline" style={{color: `hsl(var(--${data.risk_level === 'high' || data.risk_level === 'critical' ? 'destructive' : data.risk_level === 'medium' ? 'primary' : 'foreground'}))`}}>
                         {data.risk_score}
                     </div>
-                    <p className="text-muted-foreground">Risk Score (0-100)</p>
+                    <p className="text-muted-foreground">Оценка риска (0-100)</p>
                 </div>
                 <div className="md:col-span-2 space-y-4">
                     <div className={`flex items-center gap-3 rounded-md p-4 ${RiskLevelBadge.color} ${RiskLevelBadge.darkColor}`}>
                         <RiskIcon className="h-8 w-8" />
                         <div>
-                            <p className="font-bold text-lg capitalize">{data.risk_level} Risk</p>
+                            <p className="font-bold text-lg">{riskLevelMap[data.risk_level]} риск</p>
                             <p className="text-sm">{data.summary}</p>
                         </div>
                     </div>
@@ -153,8 +160,8 @@ export function AnalysisResult({ data, isLoading, isPolling, onPoll }: AnalysisR
         {data.red_flags && data.red_flags.length > 0 && (
             <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><AlertTriangle className="text-destructive"/>Red Flags</CardTitle>
-                    <CardDescription>Specific issues and concerns identified during analysis.</CardDescription>
+                    <CardTitle className="flex items-center gap-2"><AlertTriangle className="text-destructive"/>Тревожные сигналы</CardTitle>
+                    <CardDescription>Конкретные проблемы и опасения, выявленные в ходе анализа.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <ul className="space-y-4">
@@ -175,8 +182,8 @@ export function AnalysisResult({ data, isLoading, isPolling, onPoll }: AnalysisR
         {data.recommended_actions && data.recommended_actions.length > 0 && (
             <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><CheckCircle className="text-green-600"/>Recommended Actions</CardTitle>
-                    <CardDescription>Follow these steps to stay safe.</CardDescription>
+                    <CardTitle className="flex items-center gap-2"><CheckCircle className="text-green-600"/>Рекомендуемые действия</CardTitle>
+                    <CardDescription>Следуйте этим шагам, чтобы оставаться в безопасности.</CardDescription>
                 </CardHeader>
                 <CardContent>
                      <ul className="space-y-3">
@@ -194,8 +201,8 @@ export function AnalysisResult({ data, isLoading, isPolling, onPoll }: AnalysisR
         {(currentSafeReply || data.safe_reply) && (
             <Card>
                 <CardHeader>
-                    <CardTitle>Suggested Safe Reply</CardTitle>
-                    <CardDescription>A safe and neutral response you can use.</CardDescription>
+                    <CardTitle>Предлагаемый безопасный ответ</CardTitle>
+                    <CardDescription>Безопасный и нейтральный ответ, который вы можете использовать.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <blockquote className="border-l-4 border-primary pl-4 py-2 bg-muted">
@@ -203,13 +210,13 @@ export function AnalysisResult({ data, isLoading, isPolling, onPoll }: AnalysisR
                     </blockquote>
                 </CardContent>
                 <CardFooter className="gap-2">
-                    <Button onClick={() => copyToClipboard(currentSafeReply || data.safe_reply || '', 'Safe reply')}>
+                    <Button onClick={() => copyToClipboard(currentSafeReply || data.safe_reply || '', 'Безопасный ответ')}>
                         <Copy className="h-4 w-4 mr-2" />
-                        Copy Reply
+                        Копировать ответ
                     </Button>
                     <Button variant="outline" onClick={handleRegenerateReply} disabled={isGeneratingReply}>
                         <RefreshCw className={`h-4 w-4 mr-2 ${isGeneratingReply ? 'animate-spin' : ''}`} />
-                        {isGeneratingReply ? 'Generating...' : 'Regenerate'}
+                        {isGeneratingReply ? 'Генерация...' : 'Сгенерировать заново'}
                     </Button>
                 </CardFooter>
             </Card>
@@ -222,7 +229,7 @@ export function AnalysisResult({ data, isLoading, isPolling, onPoll }: AnalysisR
                         <div className='flex items-center justify-between p-4 cursor-pointer'>
                             <div className='flex items-center gap-2'>
                                 <FileText className="h-5 w-5" />
-                                <h3 className="font-semibold">Extracted Content</h3>
+                                <h3 className="font-semibold">Извлеченное содержимое</h3>
                             </div>
                             <Button variant="ghost" size="sm" className="w-9 p-0">
                                 <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />

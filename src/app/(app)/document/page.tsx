@@ -34,7 +34,7 @@ export default function DocumentPage() {
         const result: DocumentAnalysisResponse = await response.json();
         setIsPolling(true);
         setPollingData({ jobId: result.jobId });
-        toast({ title: 'Processing Document', description: 'The document is being analyzed. This might take a moment.' });
+        toast({ title: 'Обработка документа', description: 'Документ анализируется. Это может занять некоторое время.' });
       } else if (response.ok) {
         const result: DocumentAnalysisResponse = await response.json();
         setAnalysisResult(result);
@@ -42,14 +42,14 @@ export default function DocumentPage() {
         setPollingData(null);
       } else {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to analyze document.');
+        throw new Error(errorData.message || 'Не удалось проанализировать документ.');
       }
 
     } catch (error) {
       const err = error as Error;
       toast({
         variant: 'destructive',
-        title: 'Analysis Failed',
+        title: 'Анализ не удался',
         description: err.message,
       });
       setIsPolling(false);
@@ -81,7 +81,7 @@ export default function DocumentPage() {
           setPolling={setPollingState}
           endpoint="document"
           acceptedFiles={acceptedFileTypes}
-          title="Document"
+          title="Анализ документа"
         />
       )}
       <AnalysisResult 

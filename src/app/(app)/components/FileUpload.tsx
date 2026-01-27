@@ -52,7 +52,7 @@ export function FileUpload({
       });
 
       if (!uploadUrlRes.ok) {
-        throw new Error('Could not get an upload URL.');
+        throw new Error('Не удалось получить URL для загрузки.');
       }
       const { uploadUrl, s3Key }: UploadUrlResponse = await uploadUrlRes.json();
 
@@ -70,7 +70,7 @@ export function FileUpload({
         if (xhr.status === 200) {
           setStatus('success');
           setUploadProgress(100);
-          toast({ title: 'Upload complete', description: 'Starting analysis...' });
+          toast({ title: 'Загрузка завершена', description: 'Начинается анализ...' });
           setAnalysisLoading(true);
 
           const payload: any = { s3Key };
@@ -80,12 +80,12 @@ export function FileUpload({
 
           onAnalysisStart(s3Key);
         } else {
-          throw new Error('File upload failed.');
+          throw new Error('Загрузка файла не удалась.');
         }
       };
 
       xhr.onerror = () => {
-        throw new Error('An error occurred during the upload.');
+        throw new Error('Произошла ошибка во время загрузки.');
       };
       
       xhr.setRequestHeader('Content-Type', selectedFile.type);
@@ -95,7 +95,7 @@ export function FileUpload({
       const err = e as Error;
       setStatus('error');
       setError(err.message);
-      toast({ variant: 'destructive', title: 'Upload Failed', description: err.message });
+      toast({ variant: 'destructive', title: 'Ошибка загрузки', description: err.message });
       reset();
     }
   };
@@ -104,8 +104,8 @@ export function FileUpload({
     if (fileRejections.length > 0) {
         toast({
             variant: "destructive",
-            title: "File type not accepted",
-            description: `Please upload one of the following file types: ${Object.values(acceptedFiles).flat().join(', ')}`
+            title: "Тип файла не поддерживается",
+            description: `Пожалуйста, загрузите один из следующих типов файлов: ${Object.values(acceptedFiles).flat().join(', ')}`
         })
         return;
     }
@@ -131,9 +131,9 @@ export function FileUpload({
 
   return (
     <div className="space-y-4">
-      <h1 className="text-3xl font-bold font-headline">{title} Analysis</h1>
+      <h1 className="text-3xl font-bold font-headline">{title}</h1>
       <p className="text-muted-foreground">
-        Upload a file for risk analysis. We'll check it for threats and provide a security report.
+        Загрузите файл для анализа рисков. Мы проверим его на наличие угроз и предоставим отчет о безопасности.
       </p>
 
       {status === 'idle' && (
@@ -148,10 +148,10 @@ export function FileUpload({
           <div className="flex flex-col items-center gap-4">
             <UploadCloud className="h-12 w-12 text-muted-foreground" />
             <p className="font-semibold">
-              {isDragActive ? 'Drop the file here' : 'Drag & drop a file here, or click to select'}
+              {isDragActive ? 'Перетащите файл сюда' : 'Перетащите файл сюда или нажмите, чтобы выбрать'}
             </p>
             <p className="text-sm text-muted-foreground">
-              Accepted files: {Object.values(acceptedFiles).flat().join(', ')}
+              Допустимые файлы: {Object.values(acceptedFiles).flat().join(', ')}
             </p>
           </div>
         </div>
@@ -176,7 +176,7 @@ export function FileUpload({
               <div className="mt-4 space-y-2">
                 <Progress value={uploadProgress} />
                 <p className="text-sm text-muted-foreground text-center">
-                  {status === 'uploading' ? `Uploading... ${Math.round(uploadProgress)}%` : 'Upload complete!'}
+                  {status === 'uploading' ? `Загрузка... ${Math.round(uploadProgress)}%` : 'Загрузка завершена!'}
                 </p>
               </div>
             )}
@@ -185,7 +185,7 @@ export function FileUpload({
             )}
             <div className='mt-4 flex justify-center'>
                  <Button variant="outline" onClick={reset} disabled={status === 'uploading'}>
-                    Analyze another file
+                    Анализировать другой файл
                 </Button>
             </div>
           </CardContent>

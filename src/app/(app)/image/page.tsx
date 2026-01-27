@@ -27,7 +27,7 @@ export default function ImagePage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to analyze image.');
+        throw new Error(errorData.message || 'Не удалось проанализировать изображение.');
       }
 
       const result: ImageAnalysisResponse = await response.json();
@@ -36,7 +36,7 @@ export default function ImagePage() {
       const err = error as Error;
       toast({
         variant: 'destructive',
-        title: 'Analysis Failed',
+        title: 'Анализ не удался',
         description: err.message,
       });
     } finally {
@@ -53,7 +53,7 @@ export default function ImagePage() {
           setPolling={() => {}}
           endpoint="image"
           acceptedFiles={acceptedFileTypes}
-          title="Image"
+          title="Анализ изображения"
         />
       )}
       <AnalysisResult data={analysisResult} isLoading={isLoading} />
