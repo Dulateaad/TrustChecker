@@ -21,7 +21,6 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarInset,
-  SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { TrustCheckLogo } from '@/components/icons';
 import { cn } from '@/lib/utils';
@@ -34,6 +33,30 @@ const navItems = [
   { href: '/document', icon: FileJson, label: 'Document' },
   { href: '/audio', icon: Mic, label: 'Audio' },
 ];
+
+const BottomNavBar = () => {
+  const pathname = usePathname();
+
+  return (
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-background border-t z-10">
+      <div className="flex justify-around items-center h-16">
+        {navItems.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={cn(
+              'flex flex-col items-center justify-center w-full h-full text-xs gap-1',
+              pathname === item.href ? 'text-primary' : 'text-muted-foreground'
+            )}
+          >
+            <item.icon className="h-5 w-5" />
+            <span>{item.label}</span>
+          </Link>
+        ))}
+      </div>
+    </nav>
+  );
+};
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -74,15 +97,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </Sidebar>
       <SidebarInset>
         <header className="flex items-center justify-between p-4 border-b md:justify-end">
-            <SidebarTrigger className="md:hidden" />
+            <div className="md:hidden">
+              <TrustCheckLogo />
+            </div>
             <Button variant="outline" asChild>
                 <a href="https://github.com/firebase/studio-extra-samples" target="_blank" rel="noopener noreferrer">
                     View on GitHub
                 </a>
             </Button>
         </header>
-        <main className="p-4 md:p-8">{children}</main>
+        <main className="p-4 md:p-8 pb-20 md:pb-8">{children}</main>
       </SidebarInset>
+      <BottomNavBar />
     </SidebarProvider>
   );
 }
