@@ -3,13 +3,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AnalysisResult } from '../components/AnalysisResult';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Play, Square } from 'lucide-react';
 import { TextAnalysisResponse } from '@/lib/types';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
 
 const STREAMING_URL = 'https://trustcheck-streaming-gateway.onrender.com';
 const TARGET_SAMPLE_RATE = 16000;
@@ -117,7 +117,7 @@ export default function LiveCallPage() {
             }
         };
         const onError = (error: { message: string }) => {
-            toast({ variant: 'destructive', title: 'Ошибка потоковой передачи', description: error.message });
+            toast({ variant: 'destructive', title: 'Streaming Error', description: error.message });
             stopStreaming(false);
         };
 
@@ -147,7 +147,7 @@ export default function LiveCallPage() {
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.message || 'Не удалось проанализировать текст.');
+                throw new Error(errorData.message || 'Failed to analyze text.');
             }
 
             const result: TextAnalysisResponse = await response.json();
@@ -156,7 +156,7 @@ export default function LiveCallPage() {
             const err = error as Error;
             toast({
                 variant: 'destructive',
-                title: 'Ошибка анализа',
+                title: 'Analysis Error',
                 description: err.message,
             });
         } finally {
@@ -213,8 +213,8 @@ export default function LiveCallPage() {
             setHasMicPermission(false);
             toast({
                 variant: 'destructive',
-                title: 'Микрофон не доступен',
-                description: 'Пожалуйста, разрешите доступ к микрофону в настройках вашего браузера.',
+                title: 'Microphone not available',
+                description: 'Please allow microphone access in your browser settings.',
             });
             if (isStreamingRef.current) {
                 stopStreaming();
@@ -222,89 +222,99 @@ export default function LiveCallPage() {
         }
     }, [isStreaming, stopStreaming, toast]);
 
-    const statusMap: Record<string, { text: string; color: string; }> = {
-        idle: { text: "Ожидание", color: "bg-gray-500" },
-        starting: { text: "Подключение...", color: "bg-yellow-500" },
-        streaming: { text: "В эфире", color: "bg-green-500 animate-pulse" },
-        stopping: { text: "Остановка...", color: "bg-yellow-500" },
-        ended: { text: "Завершено", color: "bg-red-500" },
-    };
-    
     return (
-        <div className="space-y-8">
-            <div>
-                <h1 className="text-3xl font-bold font-headline">Анализ в реальном времени</h1>
-                <p className="text-muted-foreground">
-                    Начните транскрипцию для анализа речи на наличие потенциальных рисков в реальном времени.
-                </p>
-            </div>
-            
+        <div className="space-y-6">
+            <h1 className="text-3xl font-bold font-headline">TrustCheck: Live Speech-to-Text + Live Risk</h1>
+
+            {hasMicPermission === false && (
+                <Alert variant="destructive">
+                    <AlertTitle>Microphone Access Required</AlertTitle>
+                    <AlertDescription>
+                        Please enable microphone access in your browser settings to use this feature.
+                    </AlertDescription>
+                </Alert>
+            )}
+
             <Card>
-                <CardHeader>
-                    <div className="flex justify-between items-center">
-                        <CardTitle>Транскрипция</CardTitle>
-                        <div className="flex items-center gap-2">
-                             <Badge variant="outline" className={`transition-colors ${statusMap[status]?.color || 'bg-gray-500'}`}>
-                                {statusMap[status]?.text || 'Неизвестно'}
-                            </Badge>
-                            {!isStreaming ? (
-                                <Button onClick={startStreaming} disabled={!isConnected}>
-                                    <Play className="mr-2 h-4 w-4" /> Старт
-                                </Button>
-                            ) : (
-                                <Button variant="destructive" onClick={() => stopStreaming(true)}>
-                                    <Square className="mr-2 h-4 w-4" /> Стоп
-                                </Button>
+                <CardContent className="p-4 space-y-4">
+                    <div className="flex flex-wrap items-center gap-4">
+                        <span className="text-sm font-medium">status: {status}</span>
+                        {!isStreaming ? (
+                            <Button onClick={startStreaming} disabled={!isConnected || isStreaming} size="sm">
+                                <Play className="mr-2 h-4 w-4" /> Start
+                            </Button>
+                        ) : (
+                            <Button variant="destructive" onClick={() => stopStreaming(true)} disabled={!isStreaming} size="sm">
+                                <Square className="mr-2 h-4 w-4" /> Stop
+                            </Button>
+                        )}
+                        <Button variant="outline" onClick={handleAnalysis} disabled={isLoadingAnalysis || !finalTranscript.trim()} size="sm">
+                            {isLoadingAnalysis ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                            Analyze transcript
+                        </Button>
+                        <span className="text-sm text-muted-foreground">Auto-analyze: every 5s (final transcript)</span>
+                    </div>
+                    
+                    {(isLoadingAnalysis || analysisResult) && <Separator />}
+
+                    {isLoadingAnalysis && !analysisResult && (
+                        <div className="flex items-center justify-center p-6 text-muted-foreground">
+                            <Loader2 className="h-8 w-8 animate-spin" />
+                            <span className="ml-4">Analyzing transcript...</span>
+                        </div>
+                    )}
+
+                    {analysisResult && (
+                        <div className="space-y-3 pt-4">
+                            <div className="flex items-baseline gap-4">
+                                <div className="flex items-center gap-2">
+                                   <span className="font-semibold">Risk:</span>
+                                   <Badge variant={(analysisResult.risk_level === 'high' || analysisResult.risk_level === 'critical') ? 'destructive' : 'secondary'}>
+                                      {analysisResult.risk_level.toUpperCase()}
+                                   </Badge>
+                                </div>
+                                <span className="text-sm text-muted-foreground">score: {analysisResult.risk_score}</span>
+                            </div>
+
+                            <div>
+                                <h3 className="font-semibold">Summary</h3>
+                                <p className="text-sm text-muted-foreground">{analysisResult.summary}</p>
+                            </div>
+
+                            {analysisResult.red_flags?.length > 0 && (
+                                <div>
+                                    <h3 className="font-semibold">Red flags</h3>
+                                    <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+                                        {analysisResult.red_flags.map((flag, index) => (
+                                            <li key={index}>
+                                                <span className="font-semibold">{flag.type.replace(/_/g, ' ')} ({flag.severity}):</span> {flag.evidence}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
                             )}
                         </div>
-                    </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    {hasMicPermission === false && (
-                        <Alert variant="destructive">
-                            <AlertTitle>Требуется доступ к микрофону</AlertTitle>
-                            <AlertDescription>
-                                Пожалуйста, включите доступ к микрофону в настройках браузера, чтобы использовать эту функцию.
-                            </AlertDescription>
-                        </Alert>
                     )}
-                    <Card>
-                        <CardHeader className="pb-2">
-                            <CardDescription>Частичная транскрипция (в реальном времени)</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="italic text-muted-foreground min-h-[2rem]">
-                                {partialTranscript || '...'}
-                            </p>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="pb-2">
-                            <CardDescription>Полная транскрипция</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="min-h-[6rem]">{finalTranscript || "Пока нет полной транскрипции."}</p>
-                        </CardContent>
-                    </Card>
-                    <div className="flex justify-start">
-                        <Button onClick={handleAnalysis} disabled={isLoadingAnalysis || !finalTranscript.trim()}>
-                            {isLoadingAnalysis && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Анализировать транскрипцию
-                        </Button>
-                    </div>
                 </CardContent>
             </Card>
 
-            {(isLoadingAnalysis && !analysisResult) && (
-                 <div className="text-center p-8">
-                    <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary" />
-                    <p className="mt-4 text-muted-foreground">Анализ...</p>
-                </div>
-            )}
-            
-            {analysisResult && (
-                <AnalysisResult data={analysisResult} isLoading={isLoadingAnalysis} />
-            )}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-lg">Final transcript</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-muted-foreground min-h-[4rem]">{finalTranscript || "Waiting for final transcript..."}</p>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-lg">Partial</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="italic text-muted-foreground min-h-[2rem]">{partialTranscript || '...'}</p>
+                </CardContent>
+            </Card>
         </div>
     );
 }
