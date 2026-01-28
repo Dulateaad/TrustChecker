@@ -111,6 +111,41 @@ export default function LiveCallPage() {
         };
     }, [toast, stopStreaming]);
 
+    const handleAnalysis = useCallback(async () => {
+        if (!finalTranscript.trim()) {
+            toast({ title: 'Nothing to analyze', description: 'The transcript is empty.' });
+            return;
+        }
+
+        setIsLoadingAnalysis(true);
+        lastAnalyzedTextRef.current = finalTranscript;
+        
+        try {
+            const response = await fetch('/api/analyze/live-text', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: finalTranscript }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to analyze text.');
+            }
+
+            const result: TextAnalysisResponse = await response.json();
+            setAnalysisResult(result);
+        } catch (error) {
+            const err = error as Error;
+            toast({
+                variant: 'destructive',
+                title: 'Analysis failed',
+                description: err.message,
+            });
+        } finally {
+            setIsLoadingAnalysis(false);
+        }
+    }, [finalTranscript, toast]);
+
     useEffect(() => {
         const handle = setInterval(() => {
             if (finalTranscript && finalTranscript.length >= 30 && finalTranscript !== lastAnalyzedTextRef.current) {
@@ -118,7 +153,7 @@ export default function LiveCallPage() {
             }
         }, 5000);
         return () => clearInterval(handle);
-    }, [finalTranscript]);
+    }, [finalTranscript, handleAnalysis]);
 
     const startStreaming = useCallback(async () => {
         if (isStreaming || !socket) return;
@@ -168,41 +203,6 @@ export default function LiveCallPage() {
             }
         }
     }, [isStreaming, socket, toast, stopStreaming]);
-
-    const handleAnalysis = async () => {
-        if (!finalTranscript.trim()) {
-            toast({ title: 'Nothing to analyze', description: 'The transcript is empty.' });
-            return;
-        }
-
-        setIsLoadingAnalysis(true);
-        lastAnalyzedTextRef.current = finalTranscript;
-        
-        try {
-            const response = await fetch('/api/analyze/live-text', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: finalTranscript }),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Failed to analyze text.');
-            }
-
-            const result: TextAnalysisResponse = await response.json();
-            setAnalysisResult(result);
-        } catch (error) {
-            const err = error as Error;
-            toast({
-                variant: 'destructive',
-                title: 'Analysis failed',
-                description: err.message,
-            });
-        } finally {
-            setIsLoadingAnalysis(false);
-        }
-    };
 
     const statusMap: Record<string, { text: string; color: string; }> = {
         idle: { text: "Idle", color: "bg-gray-500" },
