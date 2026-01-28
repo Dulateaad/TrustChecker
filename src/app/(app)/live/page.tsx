@@ -49,9 +49,10 @@ const floatTo16BitPCM = (input: Float32Array): Int16Array => {
 
 
 export default function LiveCallPage() {
-    const [socket, setSocket] = useState<Socket | null>(null);
+    const socketRef = useRef<Socket | null>(null);
     const [status, setStatus] = useState('idle');
     const [isStreaming, setIsStreaming] = useState(false);
+    const [isConnected, setIsConnected] = useState(false);
     const [partialTranscript, setPartialTranscript] = useState('');
     const [finalTranscript, setFinalTranscript] = useState('');
     const [analysisResult, setAnalysisResult] = useState<TextAnalysisResponse | null>(null);
@@ -67,7 +68,10 @@ export default function LiveCallPage() {
 
     const stopStreaming = useCallback(() => {
         setIsStreaming(false);
-        socket?.emit('stop');
+
+        if (socketRef.current?.connected) {
+            socketRef.current.emit('stop');
+        }
 
         if (streamRef.current) {
             streamRef.current.getTracks().forEach(track => track.stop());
@@ -81,16 +85,26 @@ export default function LiveCallPage() {
             audioContextRef.current.close().catch(console.error);
             audioContextRef.current = null;
         }
-    }, [socket]);
+    }, []);
 
     useEffect(() => {
         const newSocket = io(STREAMING_URL, {
             transports: ['websocket'],
             path: '/socket.io',
         });
-        setSocket(newSocket);
+        socketRef.current = newSocket;
 
-        newSocket.on('connect', () => console.log('Socket connected'));
+        newSocket.on('connect', () => {
+            console.log('Socket connected');
+            setIsConnected(true);
+        });
+        newSocket.on('disconnect', () => {
+            console.log('Socket disconnected');
+            setIsConnected(false);
+            if (isStreaming) {
+                stopStreaming();
+            }
+        });
         newSocket.on('status', (data) => setStatus(data.state));
         newSocket.on('transcript', ({ text, isPartial }) => {
             if (isPartial) {
@@ -104,16 +118,17 @@ export default function LiveCallPage() {
             toast({ variant: 'destructive', title: 'Streaming Error', description: error.message });
             stopStreaming();
         });
-        newSocket.on('disconnect', () => console.log('Socket disconnected'));
 
         return () => {
             newSocket.disconnect();
+            socketRef.current = null;
         };
-    }, [toast, stopStreaming]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const handleAnalysis = useCallback(async () => {
         if (!finalTranscript.trim()) {
-            toast({ title: 'Nothing to analyze', description: 'The transcript is empty.' });
+            toast({ title: 'Нечего анализировать', description: 'Транскрипция пуста.' });
             return;
         }
 
@@ -129,7 +144,7 @@ export default function LiveCallPage() {
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.message || 'Failed to analyze text.');
+                throw new Error(errorData.message || 'Не удалось проанализировать текст.');
             }
 
             const result: TextAnalysisResponse = await response.json();
@@ -138,7 +153,7 @@ export default function LiveCallPage() {
             const err = error as Error;
             toast({
                 variant: 'destructive',
-                title: 'Analysis failed',
+                title: 'Ошибка анализа',
                 description: err.message,
             });
         } finally {
@@ -156,7 +171,7 @@ export default function LiveCallPage() {
     }, [finalTranscript, handleAnalysis]);
 
     const startStreaming = useCallback(async () => {
-        if (isStreaming || !socket) return;
+        if (isStreaming || !socketRef.current) return;
 
         setFinalTranscript('');
         setPartialTranscript('');
@@ -171,7 +186,7 @@ export default function LiveCallPage() {
             const context = new (window.AudioContext || (window as any).webkitAudioContext)();
             audioContextRef.current = context;
             
-            socket.emit('start', { languageCode: 'en-US', sampleRateHertz: TARGET_SAMPLE_RATE });
+            socketRef.current.emit('start', { languageCode: 'en-US', sampleRateHertz: TARGET_SAMPLE_RATE });
             setIsStreaming(true);
             
             const source = context.createMediaStreamSource(stream);
@@ -184,7 +199,7 @@ export default function LiveCallPage() {
                 const inputData = event.inputBuffer.getChannelData(0);
                 const downsampled = downsampleBuffer(inputData, context.sampleRate, TARGET_SAMPLE_RATE);
                 const pcm16 = floatTo16BitPCM(downsampled);
-                socket.emit('audio', pcm16.buffer);
+                socketRef.current?.emit('audio', pcm16.buffer);
             };
 
             source.connect(scriptNode);
@@ -195,47 +210,47 @@ export default function LiveCallPage() {
             setHasMicPermission(false);
             toast({
                 variant: 'destructive',
-                title: 'Microphone Access Denied',
-                description: 'Please allow microphone access in your browser settings.',
+                title: 'Микрофон не доступен',
+                description: 'Пожалуйста, разрешите доступ к микрофону в настройках вашего браузера.',
             });
             if (isStreaming) {
                 stopStreaming();
             }
         }
-    }, [isStreaming, socket, toast, stopStreaming]);
+    }, [isStreaming, toast, stopStreaming]);
 
     const statusMap: Record<string, { text: string; color: string; }> = {
-        idle: { text: "Idle", color: "bg-gray-500" },
-        starting: { text: "Connecting...", color: "bg-yellow-500" },
-        streaming: { text: "Streaming...", color: "bg-green-500 animate-pulse" },
-        stopping: { text: "Stopping...", color: "bg-yellow-500" },
-        ended: { text: "Ended", color: "bg-red-500" },
+        idle: { text: "Ожидание", color: "bg-gray-500" },
+        starting: { text: "Подключение...", color: "bg-yellow-500" },
+        streaming: { text: "В эфире...", color: "bg-green-500 animate-pulse" },
+        stopping: { text: "Остановка...", color: "bg-yellow-500" },
+        ended: { text: "Завершено", color: "bg-red-500" },
     };
     
     return (
         <div className="space-y-8">
             <div>
-                <h1 className="text-3xl font-bold font-headline">Live Call Check</h1>
+                <h1 className="text-3xl font-bold font-headline">Анализ в реальном времени</h1>
                 <p className="text-muted-foreground">
-                    Start a live transcription to analyze speech in real-time for potential risks.
+                    Начните транскрипцию для анализа речи на наличие потенциальных рисков в реальном времени.
                 </p>
             </div>
             
             <Card>
                 <CardHeader>
                     <div className="flex justify-between items-center">
-                        <CardTitle>Live Transcription</CardTitle>
+                        <CardTitle>Транскрипция</CardTitle>
                         <div className="flex items-center gap-2">
                              <Badge variant="outline" className={`transition-colors ${statusMap[status]?.color || 'bg-gray-500'}`}>
-                                {statusMap[status]?.text || 'Unknown'}
+                                {statusMap[status]?.text || 'Неизвестно'}
                             </Badge>
                             {!isStreaming ? (
-                                <Button onClick={startStreaming} disabled={isStreaming || !socket}>
-                                    <Play className="mr-2 h-4 w-4" /> Start
+                                <Button onClick={startStreaming} disabled={isStreaming || !isConnected}>
+                                    <Play className="mr-2 h-4 w-4" /> Старт
                                 </Button>
                             ) : (
                                 <Button variant="destructive" onClick={stopStreaming} disabled={!isStreaming}>
-                                    <Square className="mr-2 h-4 w-4" /> Stop
+                                    <Square className="mr-2 h-4 w-4" /> Стоп
                                 </Button>
                             )}
                         </div>
@@ -244,15 +259,15 @@ export default function LiveCallPage() {
                 <CardContent className="space-y-4">
                     {hasMicPermission === false && (
                         <Alert variant="destructive">
-                            <AlertTitle>Microphone Access Required</AlertTitle>
+                            <AlertTitle>Требуется доступ к микрофону</AlertTitle>
                             <AlertDescription>
-                                Please enable microphone access in your browser settings to use this feature.
+                                Пожалуйста, включите доступ к микрофону в настройках браузера, чтобы использовать эту функцию.
                             </AlertDescription>
                         </Alert>
                     )}
                     <Card>
                         <CardHeader className="pb-2">
-                            <CardDescription>Partial Transcript (Live)</CardDescription>
+                            <CardDescription>Частичная транскрипция (в реальном времени)</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <p className="italic text-muted-foreground min-h-[2rem]">
@@ -262,16 +277,16 @@ export default function LiveCallPage() {
                     </Card>
                     <Card>
                         <CardHeader className="pb-2">
-                            <CardDescription>Final Transcript</CardDescription>
+                            <CardDescription>Полная транскрипция</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <p className="min-h-[6rem]">{finalTranscript || "No final transcript yet."}</p>
+                            <p className="min-h-[6rem]">{finalTranscript || "Пока нет полной транскрипции."}</p>
                         </CardContent>
                     </Card>
                     <div className="flex justify-start">
                         <Button onClick={handleAnalysis} disabled={isLoadingAnalysis || !finalTranscript.trim()}>
                             {isLoadingAnalysis && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Analyze Transcript
+                            Анализировать транскрипцию
                         </Button>
                     </div>
                 </CardContent>
@@ -280,7 +295,7 @@ export default function LiveCallPage() {
             {(isLoadingAnalysis && !analysisResult) && (
                  <div className="text-center p-8">
                     <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary" />
-                    <p className="mt-4 text-muted-foreground">Analyzing...</p>
+                    <p className="mt-4 text-muted-foreground">Анализ...</p>
                 </div>
             )}
             
