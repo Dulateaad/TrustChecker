@@ -9,7 +9,7 @@ import {
   FileImage,
   FileJson,
   Mic,
-  Clapperboard,
+  PhoneCall,
 } from 'lucide-react';
 
 import {
@@ -32,6 +32,7 @@ const navItems = [
   { href: '/image', icon: FileImage, label: 'Image' },
   { href: '/document', icon: FileJson, label: 'Document' },
   { href: '/audio', icon: Mic, label: 'Audio' },
+  { href: '/live', icon: PhoneCall, label: 'Live Call' },
 ];
 
 const BottomNavBar = () => {
@@ -83,15 +84,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
-             <SidebarMenuItem>
-                <SidebarMenuButton
-                  disabled
-                  tooltip="Coming soon"
-                >
-                  <Clapperboard />
-                  <span>Live Mode</span>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
