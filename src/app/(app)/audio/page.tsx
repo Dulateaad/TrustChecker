@@ -36,7 +36,7 @@ export default function AudioPage() {
         const result: AudioAnalysisResponse = await response.json();
         setIsPolling(true);
         setPollingData({ transcribe_job: result.transcribe_job });
-        toast({ title: 'Обработка аудио', description: 'Аудио транскрибируется и анализируется. Это может занять некоторое время.' });
+        toast({ title: 'Processing audio', description: 'The audio is being transcribed and analyzed. This may take some time.' });
       } else if (response.ok) {
         const result: AudioAnalysisResponse = await response.json();
         setAnalysisResult(result);
@@ -44,13 +44,13 @@ export default function AudioPage() {
         setPollingData(null);
       } else {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Не удалось проанализировать аудио.');
+        throw new Error(errorData.message || 'Failed to analyze audio.');
       }
     } catch (error) {
       const err = error as Error;
       toast({
         variant: 'destructive',
-        title: 'Анализ не удался',
+        title: 'Analysis failed',
         description: err.message,
       });
       setIsPolling(false);
@@ -82,7 +82,7 @@ export default function AudioPage() {
           setPolling={setPollingState}
           endpoint="audio"
           acceptedFiles={acceptedFileTypes}
-          title="Анализ аудио"
+          title="Audio Analysis"
         />
       )}
       <AnalysisResult 

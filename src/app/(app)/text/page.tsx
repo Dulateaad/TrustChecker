@@ -19,8 +19,8 @@ export default function TextPage() {
     if (!text.trim()) {
       toast({
         variant: 'destructive',
-        title: 'Требуется ввод',
-        description: 'Пожалуйста, введите текст для анализа.',
+        title: 'Input required',
+        description: 'Please enter some text to analyze.',
       });
       return;
     }
@@ -37,7 +37,7 @@ export default function TextPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Не удалось проанализировать текст.');
+        throw new Error(errorData.message || 'Failed to analyze text.');
       }
 
       const result: TextAnalysisResponse = await response.json();
@@ -46,7 +46,7 @@ export default function TextPage() {
       const err = error as Error;
       toast({
         variant: 'destructive',
-        title: 'Анализ не удался',
+        title: 'Analysis failed',
         description: err.message,
       });
     } finally {
@@ -57,22 +57,22 @@ export default function TextPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold font-headline">Анализ текста</h1>
+        <h1 className="text-3xl font-bold font-headline">Text Analysis</h1>
         <p className="text-muted-foreground">
-          Вставьте любой текст для проверки на вредоносное содержимое, попытки фишинга или мошенничество.
+          Paste any text to check for malicious content, phishing attempts, or scams.
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Введите текст</CardTitle>
+          <CardTitle>Enter Text</CardTitle>
           <CardDescription>
-            Вставьте текст, который вы хотите проанализировать, в поле ниже.
+            Paste the text you want to analyze in the field below.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Textarea
-            placeholder="например, Поздравляем! Вы выиграли подарочную карту на 1000 долларов. Нажмите здесь, чтобы получить..."
+            placeholder="e.g., Congratulations! You have won a $1000 gift card. Click here to claim..."
             className="min-h-[150px] resize-y"
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -80,7 +80,7 @@ export default function TextPage() {
           />
           <Button onClick={handleAnalyze} disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isLoading ? 'Анализ...' : 'Анализировать текст'}
+            {isLoading ? 'Analyzing...' : 'Analyze Text'}
           </Button>
         </CardContent>
       </Card>

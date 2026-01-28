@@ -19,8 +19,8 @@ export default function LinkPage() {
     if (!url.trim()) {
       toast({
         variant: 'destructive',
-        title: 'Требуется ввод',
-        description: 'Пожалуйста, введите URL для анализа.',
+        title: 'Input required',
+        description: 'Please enter a URL to analyze.',
       });
       return;
     }
@@ -37,7 +37,7 @@ export default function LinkPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Не удалось проанализировать ссылку.');
+        throw new Error(errorData.message || 'Failed to analyze the link.');
       }
 
       const result: LinkAnalysisResponse = await response.json();
@@ -46,7 +46,7 @@ export default function LinkPage() {
       const err = error as Error;
       toast({
         variant: 'destructive',
-        title: 'Анализ не удался',
+        title: 'Analysis failed',
         description: err.message,
       });
     } finally {
@@ -57,17 +57,17 @@ export default function LinkPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold font-headline">Анализ ссылки</h1>
+        <h1 className="text-3xl font-bold font-headline">Link Analysis</h1>
         <p className="text-muted-foreground">
-          Введите URL-адрес, чтобы проверить, безопасен ли он и не ведет ли на вредоносный сайт.
+          Enter a URL to check if it is safe and does not lead to a malicious site.
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Введите ссылку</CardTitle>
+          <CardTitle>Enter Link</CardTitle>
           <CardDescription>
-            Укажите URL-адрес, который вы хотите проанализировать, в поле ниже.
+            Provide the URL you want to analyze in the field below.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -81,7 +81,7 @@ export default function LinkPage() {
             />
             <Button onClick={handleAnalyze} disabled={isLoading} className="whitespace-nowrap">
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isLoading ? 'Анализ...' : 'Анализировать ссылку'}
+                {isLoading ? 'Analyzing...' : 'Analyze Link'}
             </Button>
           </div>
         </CardContent>

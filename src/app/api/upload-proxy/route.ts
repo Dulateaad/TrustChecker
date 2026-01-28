@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
     const file = formData.get('file') as File | null;
 
     if (!file) {
-      return new NextResponse(JSON.stringify({ message: 'Файл не найден' }), { status: 400 });
+      return new NextResponse(JSON.stringify({ message: 'File not found' }), { status: 400 });
     }
 
     // 1. Get presigned URL from the existing backend
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
 
     if (!uploadUrlRes.ok) {
         const errorData = await uploadUrlRes.json();
-        return new NextResponse(JSON.stringify({ message: 'Не удалось получить URL для загрузки', ...errorData }), { status: uploadUrlRes.status });
+        return new NextResponse(JSON.stringify({ message: 'Failed to get upload URL', ...errorData }), { status: uploadUrlRes.status });
     }
     const { uploadUrl, s3Key } = await uploadUrlRes.json();
 
@@ -36,18 +36,18 @@ export async function POST(req: NextRequest) {
     });
 
     if (!s3UploadRes.ok) {
-        let errorBody = 'Ошибка загрузки в S3';
+        let errorBody = 'S3 upload error';
         try {
             errorBody = await s3UploadRes.text();
         } catch(e) {}
-        return new NextResponse(JSON.stringify({ message: 'Не удалось загрузить файл в S3', error: errorBody }), { status: s3UploadRes.status });
+        return new NextResponse(JSON.stringify({ message: 'Failed to upload file to S3', error: errorBody }), { status: s3UploadRes.status });
     }
 
     // 3. Return the s3Key to the client so it can start the analysis
     return NextResponse.json({ s3Key });
 
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Произошла неизвестная ошибка';
-    return new NextResponse(JSON.stringify({ message: 'Внутренняя ошибка сервера', error: errorMessage }), { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    return new NextResponse(JSON.stringify({ message: 'Internal Server Error', error: errorMessage }), { status: 500 });
   }
 }

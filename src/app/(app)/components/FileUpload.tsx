@@ -48,7 +48,7 @@ export function FileUpload({
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.message || 'Произошла ошибка во время загрузки.');
+        throw new Error(result.message || 'An error occurred during the upload.');
       }
 
       setStatus('success');
@@ -60,7 +60,7 @@ export function FileUpload({
       setError(err.message);
       toast({
         variant: 'destructive',
-        title: 'Ошибка загрузки',
+        title: 'Upload Error',
         description: err.message,
       });
     }
@@ -70,15 +70,15 @@ export function FileUpload({
     if (fileRejections.length > 0) {
         toast({
             variant: "destructive",
-            title: "Тип файла не поддерживается",
-            description: `Пожалуйста, загрузите один из следующих типов файлов: ${Object.values(acceptedFiles).flat().join(', ')}`
+            title: "File type not supported",
+            description: `Please upload one of the following file types: ${Object.values(acceptedFiles).flat().join(', ')}`
         })
         return;
     }
     if (droppedAcceptedFiles.length > 0) {
       handleUpload(droppedAcceptedFiles[0]);
     }
-  }, [acceptedFiles]);
+  }, [acceptedFiles, toast]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -98,7 +98,7 @@ export function FileUpload({
     <div className="space-y-4">
       <h1 className="text-3xl font-bold font-headline">{title}</h1>
       <p className="text-muted-foreground">
-        Загрузите файл для анализа рисков. Мы проверим его на наличие угроз и предоставим отчет о безопасности.
+        Upload a file for risk analysis. We will check it for threats and provide a security report.
       </p>
 
       {status === 'idle' && (
@@ -113,10 +113,10 @@ export function FileUpload({
           <div className="flex flex-col items-center gap-4">
             <UploadCloud className="h-12 w-12 text-muted-foreground" />
             <p className="font-semibold">
-              {isDragActive ? 'Перетащите файл сюда' : 'Перетащите файл сюда или нажмите, чтобы выбрать'}
+              {isDragActive ? 'Drop the file here' : 'Drag and drop your file here, or click to select'}
             </p>
             <p className="text-sm text-muted-foreground">
-              Допустимые файлы: {Object.values(acceptedFiles).flat().join(', ')}
+              Accepted files: {Object.values(acceptedFiles).flat().join(', ')}
             </p>
           </div>
         </div>
@@ -138,7 +138,7 @@ export function FileUpload({
             </div>
             
             {status === 'uploading' && (
-                <p className="text-sm text-muted-foreground text-center mt-4">Загрузка...</p>
+                <p className="text-sm text-muted-foreground text-center mt-4">Uploading...</p>
             )}
 
             {status === 'error' && (
@@ -146,7 +146,7 @@ export function FileUpload({
             )}
             <div className='mt-4 flex justify-center'>
                  <Button variant="outline" onClick={reset} disabled={status === 'uploading'}>
-                    Анализировать другой файл
+                    Analyze another file
                 </Button>
             </div>
           </CardContent>
