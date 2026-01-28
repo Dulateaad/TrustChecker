@@ -4,10 +4,8 @@ import { useState, useCallback } from 'react';
 import { useDropzone, FileRejection } from 'react-dropzone';
 import { UploadCloud, File as FileIcon, Loader2, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import type { UploadUrlResponse } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
 
 interface FileUploadProps {
@@ -28,86 +26,43 @@ export function FileUpload({
   title,
 }: FileUploadProps) {
   const [file, setFile] = useState<File | null>(null);
-  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [status, setStatus] = useState<'idle' | 'uploading' | 'error' | 'success'>('idle');
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const getFileExtension = (filename: string) => {
-    return filename.slice(((filename.lastIndexOf('.') - 1) >>> 0) + 2);
-  };
-
   const handleUpload = async (selectedFile: File) => {
     setFile(selectedFile);
     setStatus('uploading');
-    setUploadProgress(0);
     setError(null);
 
     try {
-      // 1. Get presigned URL
-      const ext = getFileExtension(selectedFile.name);
-      const uploadUrlRes = await fetch('/api/upload-url', {
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      // Upload via our proxy to avoid CORS
+      const response = await fetch('/api/upload-proxy', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contentType: selectedFile.type, ext }),
+        body: formData,
       });
 
-      if (!uploadUrlRes.ok) {
-        throw new Error('Не удалось получить URL для загрузки.');
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Произошла ошибка во время загрузки.');
       }
-      const { uploadUrl, s3Key }: UploadUrlResponse = await uploadUrlRes.json();
 
-      // 2. Upload file to S3 with progress
-      const xhr = new XMLHttpRequest();
-      xhr.open('PUT', uploadUrl);
-      xhr.upload.onprogress = (event) => {
-        if (event.lengthComputable) {
-          const percentComplete = (event.loaded / event.total) * 100;
-          setUploadProgress(percentComplete);
-        }
-      };
-
-      xhr.onload = () => {
-        if (xhr.status === 200) {
-          setStatus('success');
-          setUploadProgress(100);
-          toast({ title: 'Загрузка завершена', description: 'Начинается анализ...' });
-          setAnalysisLoading(true);
-          onAnalysisStart(s3Key);
-        } else {
-          const errorMessage = `Загрузка файла не удалась. Статус: ${xhr.status}`;
-          setStatus('error');
-          setError(errorMessage);
-          toast({
-            variant: 'destructive',
-            title: 'Ошибка загрузки',
-            description: errorMessage,
-          });
-          reset();
-        }
-      };
-
-      xhr.onerror = () => {
-        const errorMessage = 'Произошла ошибка во время загрузки. Это может быть связано с сетевой проблемой или ошибкой CORS.';
-        setStatus('error');
-        setError(errorMessage);
-        toast({
-          variant: 'destructive',
-          title: 'Ошибка загрузки',
-          description: errorMessage,
-        });
-        reset();
-      };
-      
-      xhr.setRequestHeader('Content-Type', selectedFile.type);
-      xhr.send(selectedFile);
-
+      setStatus('success');
+      setAnalysisLoading(true);
+      onAnalysisStart(result.s3Key);
     } catch (e) {
       const err = e as Error;
       setStatus('error');
       setError(err.message);
-      toast({ variant: 'destructive', title: 'Ошибка загрузки', description: err.message });
-      reset();
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка загрузки',
+        description: err.message,
+      });
     }
   };
 
@@ -123,7 +78,7 @@ export function FileUpload({
     if (droppedAcceptedFiles.length > 0) {
       handleUpload(droppedAcceptedFiles[0]);
     }
-  }, [acceptedFiles, handleUpload]);
+  }, [acceptedFiles]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -133,7 +88,6 @@ export function FileUpload({
 
   const reset = () => {
     setFile(null);
-    setUploadProgress(null);
     setStatus('idle');
     setError(null);
     setAnalysisLoading(false);
@@ -182,15 +136,11 @@ export function FileUpload({
               {status === 'uploading' && <Loader2 className="h-5 w-5 animate-spin" />}
               {status === 'error' && <XCircle className="h-5 w-5 text-destructive" />}
             </div>
-
-            {uploadProgress !== null && (
-              <div className="mt-4 space-y-2">
-                <Progress value={uploadProgress} />
-                <p className="text-sm text-muted-foreground text-center">
-                  {status === 'uploading' ? `Загрузка... ${Math.round(uploadProgress)}%` : 'Загрузка завершена!'}
-                </p>
-              </div>
+            
+            {status === 'uploading' && (
+                <p className="text-sm text-muted-foreground text-center mt-4">Загрузка...</p>
             )}
+
             {status === 'error' && (
                 <p className='text-sm text-destructive mt-2 text-center'>{error}</p>
             )}
