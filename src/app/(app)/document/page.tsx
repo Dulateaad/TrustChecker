@@ -17,7 +17,7 @@ export default function DocumentPage() {
   const [analysisResult, setAnalysisResult] = useState<DocumentAnalysisResponse | null>(null);
   const { toast } = useToast();
 
-  const handleAnalysis = async (payload: { s3Key: string } | Pollable) => {
+  const handleAnalysis = async (payload: { s3Key: string; fileType: string; } | Pollable) => {
     setIsLoading(true);
     if ('s3Key' in payload) {
       setAnalysisResult(null);

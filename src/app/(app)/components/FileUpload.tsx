@@ -8,9 +8,10 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import type { UploadUrlResponse } from '@/lib/types';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface FileUploadProps {
-  onAnalysisStart: (s3Key: string, pollingData?: any) => void;
+  onAnalysisStart: (s3Key: string) => void;
   setAnalysisLoading: (isLoading: boolean) => void;
   setPolling: (isPolling: boolean, pollingData?: any) => void;
   endpoint: 'image' | 'document' | 'audio';
@@ -72,12 +73,6 @@ export function FileUpload({
           setUploadProgress(100);
           toast({ title: 'Загрузка завершена', description: 'Начинается анализ...' });
           setAnalysisLoading(true);
-
-          const payload: any = { s3Key };
-          if (endpoint === 'document') {
-            payload.fileType = ext;
-          }
-
           onAnalysisStart(s3Key);
         } else {
           throw new Error('Загрузка файла не удалась.');
@@ -100,7 +95,7 @@ export function FileUpload({
     }
   };
 
-  const onDrop = useCallback((acceptedFiles: File[], fileRejections: FileRejection[]) => {
+  const onDrop = useCallback((droppedAcceptedFiles: File[], fileRejections: FileRejection[]) => {
     if (fileRejections.length > 0) {
         toast({
             variant: "destructive",
@@ -109,10 +104,10 @@ export function FileUpload({
         })
         return;
     }
-    if (acceptedFiles.length > 0) {
-      handleUpload(acceptedFiles[0]);
+    if (droppedAcceptedFiles.length > 0) {
+      handleUpload(droppedAcceptedFiles[0]);
     }
-  }, []);
+  }, [acceptedFiles]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
