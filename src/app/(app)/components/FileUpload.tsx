@@ -75,12 +75,28 @@ export function FileUpload({
           setAnalysisLoading(true);
           onAnalysisStart(s3Key);
         } else {
-          throw new Error('Загрузка файла не удалась.');
+          const errorMessage = `Загрузка файла не удалась. Статус: ${xhr.status}`;
+          setStatus('error');
+          setError(errorMessage);
+          toast({
+            variant: 'destructive',
+            title: 'Ошибка загрузки',
+            description: errorMessage,
+          });
+          reset();
         }
       };
 
       xhr.onerror = () => {
-        throw new Error('Произошла ошибка во время загрузки.');
+        const errorMessage = 'Произошла ошибка во время загрузки. Это может быть связано с сетевой проблемой или ошибкой CORS.';
+        setStatus('error');
+        setError(errorMessage);
+        toast({
+          variant: 'destructive',
+          title: 'Ошибка загрузки',
+          description: errorMessage,
+        });
+        reset();
       };
       
       xhr.setRequestHeader('Content-Type', selectedFile.type);
@@ -107,7 +123,7 @@ export function FileUpload({
     if (droppedAcceptedFiles.length > 0) {
       handleUpload(droppedAcceptedFiles[0]);
     }
-  }, [acceptedFiles]);
+  }, [acceptedFiles, handleUpload]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
