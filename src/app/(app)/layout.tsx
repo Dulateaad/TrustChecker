@@ -22,7 +22,7 @@ import {
   SidebarMenuButton,
   SidebarInset,
 } from '@/components/ui/sidebar';
-import { TrustCheckLogo } from '@/components/icons';
+import { FraudyLogo } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -66,7 +66,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-          <TrustCheckLogo />
+          <FraudyLogo />
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
@@ -90,7 +90,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <SidebarInset>
         <header className="flex items-center justify-between p-4 border-b md:justify-end">
             <div className="md:hidden">
-              <TrustCheckLogo />
+              <FraudyLogo />
             </div>
         </header>
         <main className="p-4 md:p-8 pb-20 md:pb-8">{children}</main>

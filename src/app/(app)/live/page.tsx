@@ -224,7 +224,7 @@ export default function LiveCallPage() {
 
     return (
         <div className="space-y-6">
-            <h1 className="text-3xl font-bold font-headline">TrustCheck: Live Speech-to-Text + Live Risk</h1>
+            <h1 className="text-3xl font-bold font-headline">Fraudy: Live Speech-to-Text + Live Risk</h1>
 
             {hasMicPermission === false && (
                 <Alert variant="destructive">

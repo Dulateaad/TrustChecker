@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
-  title: 'TrustCheck',
+  title: 'Fraudy',
   description: 'Detect fraud risks for text, links, images, documents, and calls.',
 };
 
